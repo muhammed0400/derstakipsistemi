@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <div class="container mt-4">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="#">Ders Yönetim Sistemi</a>
+                <div class="d-flex">
+                    <a href="{{ url_for('cikis') }}" class="btn btn-danger">Çıkış Yap</a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        Hocalar
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group">
+                            {% for hoca in hocalar %}
+                            <li class="list-group-item">
+                                <a href="{{ url_for('hoca_detay', hoca_id=hoca.hoca_id) }}">
+                                    {{ hoca.isim }} {{ hoca.soyisim }}
+                                </a>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4 mb-4">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        Öğrenciler
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group">
+                            {% for ogrenci in ogrenciler %}
+                            <li class="list-group-item">
+                                <a href="{{ url_for('ogrenci_detay', ogr_id=ogrenci.ogr_id) }}">
+                                    {{ ogrenci.isim }} {{ ogrenci.ogr_soyisim }}
+                                </a>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4 mb-4">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        Dersler
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group">
+                            {% for ders in dersler %}
+                            <li class="list-group-item">
+                                {{ ders.ders_adi }}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -44,18 +44,20 @@ def dashboard():
 def hoca_detay(hoca_id):
     if request.method == 'POST':
         ders_adi = request.form['ders_adi']
-        ders_kodu = request.form['ders_kodu']
-        if db.ders_ekle(hoca_id, ders_adi, ders_kodu):
-            flash('Ders başarıyla eklendi', 'success')
+        result = db.ders_ekle(hoca_id, ders_adi)
+        if result['status']:
+            flash(result['message'], 'success')
         else:
-            flash('Ders eklenirken hata oluştu', 'error')
+            flash(result['message'], 'error')
         return redirect(url_for('hoca_detay', hoca_id=hoca_id))
     if 'kullanici_id' not in session and not session.get('admin_logged_in'):
         return redirect(url_for('login'))
+    hoca = db.hoca_getir(hoca_id)
     hoca_dersleri = db.hocanin_verdigi_dersler(hoca_id)
     return render_template('hoca.html', 
                          dersler=hoca_dersleri,
-                         hoca_id=hoca_id)
+                         hoca_id=hoca_id,
+                         hoca=hoca)
 
 @app.route('/ogrenci/<int:ogr_id>')
 def ogrenci_detay(ogr_id):
@@ -82,13 +84,34 @@ def ogrenci_ders_sec():
         flash('Lütfen en az bir ders seçiniz', 'error')
         return redirect(url_for('ogrenci_detay', ogr_id=ogr_id))
     
+    # Mevcut ders sayısını kontrol et
+    mevcut_dersler = db.ogrencinin_aldigi_dersler(ogr_id)
+    if len(mevcut_dersler) + len(secilen_dersler) > 8:
+        flash('En fazla 8 ders seçebilirsiniz. Şu anda ' + str(len(mevcut_dersler)) + ' dersiniz var.', 'error')
+        return redirect(url_for('ogrenci_detay', ogr_id=ogr_id))
+    
+    basarili_dersler = []
+    hatali_dersler = []
+    
     for ders_id in secilen_dersler:
         result = db.ders_sec(ogr_id, ders_id)
-        if not result['status']:
-            flash(result['message'], 'error')
-            return redirect(url_for('ogrenci_detay', ogr_id=ogr_id))
+        if result['status']:
+            basarili_dersler.append(ders_id)
+        else:
+            hatali_dersler.append({'ders_id': ders_id, 'mesaj': result['message']})
     
-    flash('Ders seçimi başarıyla tamamlandı', 'success')
+    if basarili_dersler:
+        if len(basarili_dersler) == len(secilen_dersler):
+            flash('Tüm dersler başarıyla eklendi', 'success')
+        else:
+            flash(f'{len(basarili_dersler)} ders başarıyla eklendi', 'success')
+    
+    if hatali_dersler:
+        for hata in hatali_dersler:
+            ders = db.ders_getir(hata['ders_id'])
+            if ders:
+                flash(f"{ders['ders_adi']}: {hata['mesaj']}", 'error')
+    
     return redirect(url_for('ogrenci_detay', ogr_id=ogr_id))
 
 @app.route('/ogrenci/ders_geri_al', methods=['POST'])
@@ -103,11 +126,17 @@ def ogrenci_ders_geri_al():
         flash('Ders seçimi yapılmadı', 'error')
         return redirect(url_for('ogrenci_detay', ogr_id=ogr_id))
     
+    # Dersi kontrol et
+    ders = db.ders_getir(ders_id)
+    if not ders:
+        flash('Ders bulunamadı', 'error')
+        return redirect(url_for('ogrenci_detay', ogr_id=ogr_id))
+    
     result = db.ders_geri_al(ogr_id, ders_id)
     if result['status']:
-        flash(result['message'], 'success')
+        flash(f"{ders['ders_adi']} dersi başarıyla geri alındı", 'success')
     else:
-        flash(result['message'], 'error')
+        flash(f"{ders['ders_adi']}: {result['message']}", 'error')
     
     return redirect(url_for('ogrenci_detay', ogr_id=ogr_id))
 
@@ -145,6 +174,29 @@ def ogrenci_giris():
 def cikis():
     session.clear()
     return redirect(url_for('login'))
+
+@app.route('/hoca/<int:hoca_id>/ders/<int:ders_id>/ogrenciler')
+def ders_ogrencileri(hoca_id, ders_id):
+    ogrenciler = db.dersi_alan_ogrenciler(ders_id, hoca_id)
+    ders = db.ders_getir(ders_id)
+    return render_template('ogrenci_listesi.html',
+                         ogrenciler=ogrenciler,
+                         hoca_id=hoca_id,
+                         ders_id=ders_id,
+                         ders=ders)
+
+@app.route('/hoca/<int:hoca_id>/ders/<int:ders_id>/sil', methods=['POST'])
+def ders_sil(hoca_id, ders_id):
+    if 'kullanici_id' not in session and not session.get('admin_logged_in'):
+        return redirect(url_for('login'))
+    
+    result = db.ders_sil(hoca_id, ders_id)
+    if result['status']:
+        flash(result['message'], 'success')
+    else:
+        flash(result['message'], 'error')
+    
+    return redirect(url_for('hoca_detay', hoca_id=hoca_id))
 
 if __name__ == '__main__':
     app.run(debug=True)

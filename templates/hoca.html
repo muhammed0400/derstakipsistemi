@@ -3,25 +3,46 @@
 <head>
     <title>Hoca Detay</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
-<body>
+<body class="bg-light">
     <div class="container mt-4">
-        <h2>Hoca ID: {{ hoca_id }} - Verdiği Dersler</h2>
-        <!-- Ders Ekleme Formu -->
-        <form method="POST" action="{{ url_for('hoca_detay', hoca_id=hoca_id) }}" class="mb-4">
-            <div class="row g-3">
-                <div class="col-md-5">
-                    <input type="text" name="ders_adi" class="form-control" placeholder="Ders Adı" required>
-                </div>
-                <div class="col-md-5">
-                    <input type="text" name="ders_kodu" class="form-control" placeholder="Ders Kodu" required>
-                </div>
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-primary w-100">Ders Ekle</button>
+        <div class="card mb-4 shadow-sm">
+            <div class="card-body bg-primary bg-gradient text-white p-4">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-person-circle fs-1 me-3"></i>
+                    <div>
+                        <h1 class="display-6 mb-0">Öğretim Üyesi {{ hoca.isim }} {{ hoca.soyisim }}</h1>
+                    </div>
                 </div>
             </div>
-        </form>
+        </div>
+        <!-- Ders Ekleme Formu -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-plus-circle-fill text-primary me-2"></i>Yeni Ders Ekle
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('hoca_detay', hoca_id=hoca_id) }}">
+                    <div class="row g-3">
+                        <div class="col-md-9">
+                            <div class="form-floating">
+                                <input type="text" name="ders_adi" class="form-control" id="dersAdi" placeholder="Ders Adı" required>
+                                <label for="dersAdi">Ders Adı</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" class="btn btn-primary w-100 h-100">
+                                <i class="bi bi-plus-lg me-2"></i>Ekle
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
 
         <!-- Flash Mesajları -->
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -36,14 +57,51 @@
         {% endwith %}
 
         <!-- Ders Listesi -->
-        <ul class="list-group mt-3">
-            {% for ders in dersler %}
-            <li class="list-group-item">{{ ders.ders_adi }}</li>
-            {% else %}
-            <li class="list-group-item">Ders bulunamadı</li>
-            {% endfor %}
-        </ul>
-        <a href="/" class="btn btn-primary mt-3">Geri Dön</a>
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-journal-text text-primary me-2"></i>Verdiğim Dersler
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if dersler %}
+                <div class="list-group list-group-flush">
+                    {% for ders in dersler %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h5 class="mb-1">{{ ders.ders_adi }}</h5>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <a href="{{ url_for('ders_ogrencileri', hoca_id=hoca_id, ders_id=ders.ders_id) }}" 
+                                   class="btn btn-outline-primary">
+                                    <i class="bi bi-people-fill me-2"></i>Öğrencileri Görüntüle
+                                </a>
+                                <form method="POST" action="{{ url_for('ders_sil', hoca_id=hoca_id, ders_id=ders.ders_id) }}" class="d-inline">
+                                    <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Bu dersi silmek istediğinize emin misiniz?')">
+                                        <i class="bi bi-trash me-2"></i>Dersi Sil
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-journal-x text-muted fs-1"></i>
+                    <p class="lead text-muted mt-2">Henüz ders eklenmemiş</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="text-center mt-4">
+            <a href="/" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-2"></i>Ana Sayfaya Dön
+            </a>
+        </div>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

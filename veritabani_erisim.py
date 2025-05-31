@@ -94,7 +94,13 @@ class VeritabaniErisim:
     
     def tum_dersleri_getir(self):
         try:
-            result = self.connection.execute(text("SELECT * FROM dersler"))
+            sorgu = text("""
+            SELECT d.*, h.isim as hoca_adi, h.soyisim as hoca_soyisim
+            FROM dersler d
+            LEFT JOIN hocalar_ders hd ON d.ders_id = hd.ders_id
+            LEFT JOIN hocalar h ON hd.hoca_id = h.hoca_id
+            """)
+            result = self.connection.execute(sorgu)
             rows = result.mappings().fetchall()
             return [dict(row) for row in rows]
         except SQLAlchemyError as err:
@@ -116,7 +122,7 @@ class VeritabaniErisim:
             print(f"Sorgu hatası: {err}")
             return []
     
-    def ders_ekle(self, hoca_id, ders_adi, ders_kodu):
+    def ders_ekle(self, hoca_id, ders_adi):
         try:
             transaction = self.connection.begin()
             
@@ -145,9 +151,13 @@ class VeritabaniErisim:
     def ogrencinin_aldigi_dersler(self, ogr_id):
         try:
             sorgu = text("""
-            SELECT d.ders_id, d.ders_adi 
+            SELECT d.ders_id, d.ders_adi,
+                   h.isim as hoca_adi,
+                   h.soyisim as hoca_soyisim
             FROM dersler d
             JOIN ogrenciler_ders od ON d.ders_id = od.ders_id
+            LEFT JOIN hocalar_ders hd ON d.ders_id = hd.ders_id
+            LEFT JOIN hocalar h ON hd.hoca_id = h.hoca_id
             WHERE od.ogr_id = :ogr_id
             """)
             result = self.connection.execute(sorgu, {"ogr_id": ogr_id})
@@ -160,6 +170,16 @@ class VeritabaniErisim:
     def ders_sec(self, ogr_id, ders_id):
         try:
             transaction = self.connection.begin()
+            
+            # Öğrencinin mevcut ders sayısını kontrol et
+            mevcut_ders_sayisi = self.connection.execute(
+                text("SELECT COUNT(*) FROM ogrenciler_ders WHERE ogr_id=:o"),
+                {"o": ogr_id}
+            ).scalar()
+            
+            if mevcut_ders_sayisi >= 8:
+                return {'status': False, 'message': 'En fazla 8 ders seçebilirsiniz'}
+            
             # Daha önce kayıt kontrolü
             kontrol = self.connection.execute(
                 text("SELECT * FROM ogrenciler_ders WHERE ogr_id=:o AND ders_id=:d"),
@@ -169,10 +189,42 @@ class VeritabaniErisim:
             if kontrol:
                 return {'status': False, 'message': 'Bu derse zaten kayıtlısınız'}
             
-            self.connection.execute(
-                text("INSERT INTO ogrenciler_ders (ogr_id, ders_id) VALUES (:o, :d)"),
-                {"o": ogr_id, "d": ders_id}
-            )
+            # Dersin kontenjan kontrolü
+            ders_kontrol = self.connection.execute(
+                text("""
+                SELECT d.*, COUNT(od.ogr_id) as ogrenci_sayisi 
+                FROM dersler d 
+                LEFT JOIN ogrenciler_ders od ON d.ders_id = od.ders_id 
+                WHERE d.ders_id = :d 
+                GROUP BY d.ders_id
+                """),
+                {"d": ders_id}
+            ).mappings().first()
+            
+            if ders_kontrol and ders_kontrol['ogrenci_sayisi'] >= 20:
+                return {'status': False, 'message': 'Bu dersin kontenjanı dolmuştur'}
+            
+            # Dersin mevcut hocasını bul
+            hoca_sorgu = text("""
+                SELECT h.hoca_id, h.isim, h.soyisim
+                FROM hocalar h
+                JOIN hocalar_ders hd ON h.hoca_id = hd.hoca_id
+                WHERE hd.ders_id = :ders_id
+            """)
+            hoca = self.connection.execute(hoca_sorgu, {"ders_id": ders_id}).mappings().first()
+            
+            # Öğrenci-ders kaydını yap ve hoca bilgisini sakla
+            if hoca:
+                self.connection.execute(
+                    text("INSERT INTO ogrenciler_ders (ogr_id, ders_id, hoca_id, hoca_adi, hoca_soyisim) VALUES (:o, :d, :h_id, :h_ad, :h_soyad)"),
+                    {"o": ogr_id, "d": ders_id, "h_id": hoca['hoca_id'], "h_ad": hoca['isim'], "h_soyad": hoca['soyisim']}
+                )
+            else:
+                self.connection.execute(
+                    text("INSERT INTO ogrenciler_ders (ogr_id, ders_id) VALUES (:o, :d)"),
+                    {"o": ogr_id, "d": ders_id}
+                )
+            
             transaction.commit()
             return {'status': True, 'message': 'Ders seçimi başarılı'}
         except SQLAlchemyError as err:
@@ -183,13 +235,31 @@ class VeritabaniErisim:
     def ders_geri_al(self, ogr_id, ders_id):
         try:
             transaction = self.connection.begin()
+            
+            # Ders kaydının tarihini kontrol et
+            kayit_kontrol = self.connection.execute(
+                text("""
+                SELECT DATEDIFF(NOW(), kayit_tarihi) as gun_farki 
+                FROM ogrenciler_ders 
+                WHERE ogr_id=:o AND ders_id=:d
+                """),
+                {"o": ogr_id, "d": ders_id}
+            ).mappings().first()
+            
+            if not kayit_kontrol:
+                return {'status': False, 'message': 'Ders kaydı bulunamadı'}
+            
+            # 14 günlük süre kontrolü
+            if kayit_kontrol['gun_farki'] > 14:
+                return {'status': False, 'message': 'Ders geri alma süresi (14 gün) dolmuştur'}
+            
             result = self.connection.execute(
                 text("DELETE FROM ogrenciler_ders WHERE ogr_id=:o AND ders_id=:d"),
                 {"o": ogr_id, "d": ders_id}
             )
             
             if result.rowcount == 0:
-                return {'status': False, 'message': 'Ders bulunamadı'}
+                return {'status': False, 'message': 'Ders kaydı silinemedi'}
             
             transaction.commit()
             return {'status': True, 'message': 'Ders başarıyla geri alındı'}
@@ -197,18 +267,39 @@ class VeritabaniErisim:
             transaction.rollback()
             print(f"Ders geri alma hatası: {err}")
             return {'status': False, 'message': 'Veritabanı hatası: ' + str(err)}
+
+    def ders_getir(self, ders_id):
+        try:
+            sorgu = text("SELECT * FROM dersler WHERE ders_id = :ders_id")
+            result = self.connection.execute(sorgu, {"ders_id": ders_id})
+            row = result.mappings().first()
+            return dict(row) if row else None
+        except SQLAlchemyError as err:
+            print(f"Ders sorgulama hatası: {err}")
+            return None
+
+    def hoca_getir(self, hoca_id):
+        try:
+            sorgu = text("SELECT * FROM hocalar WHERE hoca_id = :hoca_id")
+            result = self.connection.execute(sorgu, {"hoca_id": hoca_id})
+            row = result.mappings().first()
+            return dict(row) if row else None
+        except SQLAlchemyError as err:
+            print(f"Hoca sorgulama hatası: {err}")
+            return None
                 
 
     
-    def dersi_alan_ogrenciler(self, ders_id):
+    def dersi_alan_ogrenciler(self, ders_id, hoca_id):
         try:
             sorgu = text("""
-            SELECT o.ogr_id, o.ogr_isim, o.ogr_soyisim, o.ogr_email
+            SELECT o.ogr_no, o.isim, o.ogr_soyisim, o.ogr_email
             FROM ogrenciler o
             JOIN ogrenciler_ders od ON o.ogr_id = od.ogr_id
+            JOIN hocalar_ders hd ON od.ders_id = hd.ders_id AND hd.hoca_id = :hoca_id
             WHERE od.ders_id = :ders_id
             """)
-            result = self.connection.execute(sorgu, {"ders_id": ders_id})
+            result = self.connection.execute(sorgu, {"ders_id": ders_id, "hoca_id": hoca_id})
             rows = result.mappings().fetchall()
             return [dict(row) for row in rows]
         except SQLAlchemyError as err:
@@ -229,6 +320,43 @@ class VeritabaniErisim:
         except SQLAlchemyError as err:
             print(f"Sorgu hatası: {err}")
             return []
+            
+    def ders_sil(self, hoca_id, ders_id):
+        try:
+            transaction = self.connection.begin()
+            
+            # Önce öğrenci-ders ilişkilerini sil
+            self.connection.execute(
+                text("DELETE FROM ogrenciler_ders WHERE ders_id = :ders_id"),
+                {"ders_id": ders_id}
+            )
+            
+            # Sonra hoca-ders ilişkisini sil
+            result = self.connection.execute(
+                text("DELETE FROM hocalar_ders WHERE hoca_id = :hoca_id AND ders_id = :ders_id"),
+                {"hoca_id": hoca_id, "ders_id": ders_id}
+            )
+            
+            if result.rowcount == 0:
+                transaction.rollback()
+                return {"status": False, "message": "Ders bulunamadı"}
+            
+            # En son dersi sil
+            self.connection.execute(
+                text("DELETE FROM dersler WHERE ders_id = :ders_id"),
+                {"ders_id": ders_id}
+            )
+            
+            transaction.commit()
+            return {"status": True, "message": "Ders başarıyla silindi"}
+        except SQLAlchemyError as err:
+            transaction.rollback()
+            print(f"Ders silme hatası: {err}")
+            return {"status": False, "message": "Veritabanı hatası: " + str(err)}
+        except Exception as e:
+            transaction.rollback()
+            print(f"Beklenmeyen hata: {e}")
+            return {"status": False, "message": "Beklenmeyen hata oluştu"}
 
 def main():
     db = VeritabaniErisim()
@@ -332,7 +460,8 @@ def main():
                 print("Bu öğrenci için ders bulunamadı veya öğrenci ID'si geçersiz.")
         elif secim == "6":
             ders_id = input("Ders ID'sini girin: ")
-            ogrenciler = db.dersi_alan_ogrenciler(ders_id)
+            hoca_id = input("Hoca ID'sini girin: ")
+            ogrenciler = db.dersi_alan_ogrenciler(ders_id, hoca_id)
             print(f"\n--- Ders ID: {ders_id} için Öğrenciler ---")
             if ogrenciler:
                 for ogrenci in ogrenciler:
@@ -341,6 +470,7 @@ def main():
                 print("Bu ders için öğrenci bulunamadı veya ders ID'si geçersiz.")
         elif secim == "7":
             ders_id = input("Ders ID'sini girin: ")
+            hoca_id = input("Hoca ID'sini girin: ")
             hocalar = db.dersi_veren_hoca(ders_id)
             print(f"\n--- Ders ID: {ders_id} için Hocalar ---")
             if hocalar:

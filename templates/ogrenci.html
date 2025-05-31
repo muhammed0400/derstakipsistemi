@@ -6,8 +6,25 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
-<body>
+<body class="bg-light">
     <div class="container mt-4">
+        <div class="card mb-4 shadow-sm">
+            <div class="card-body bg-primary bg-gradient text-white p-4">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-person-circle fs-1 me-3"></i>
+                    <div>
+                        <h1 class="display-6 mb-0">{{ ogrenci.isim }} {{ ogrenci.ogr_soyisim }}</h1>
+                        <div class="mt-2">
+                            <span class="badge bg-success rounded-pill">
+                                <i class="bi bi-123 me-1"></i>Öğrenci No: {{ ogrenci.ogr_no }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Flash Mesajları -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
@@ -18,58 +35,138 @@
                 {% endfor %}
             {% endif %}
         {% endwith %}
-    </div>
-    <div class="card mb-4 shadow-lg">
-        <div class="card-header bg-gradient-primary text-white">
-            <div class="d-flex justify-content-between align-items-center px-3 py-2">
-                <div class="d-flex align-items-center gap-3">
-                    <i class="bi bi-person-circle display-6 text-light"></i>
-                    <div>
-                        <h2 class="mb-0 fw-bold text-gradient">{{ ogrenci.isim }} {{ ogrenci.soyisim }}</h2>
-                        <span class="badge bg-gradient-success rounded-pill fs-6">
-                            <i class="bi bi-123 me-2"></i>{{ ogr_id }}
-                        </span>
-                    </div>
-                </div>
-                <a href="/" class="btn btn-gradient-danger btn-lg px-4">
-                    <i class="bi bi-arrow-left-circle me-2"></i>Geri Dön
-                </a>
+
+        <!-- Ders Seçme Formu -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-plus-circle-fill text-primary me-2"></i>Yeni Ders Seç
+                </h5>
             </div>
-        </div>
-        <div class="card-body">
-            <h5 class="card-title">Aldığı Dersler</h5>
-            <div class="card mb-4 shadow-lg">
-              <div class="card-header bg-success text-white">
-                <h5>Yeni Ders Seç</h5>
-              </div>
-              <div class="card-body">
+            <div class="card-body">
                 <form method="POST" action="{{ url_for('ogrenci_ders_sec') }}">
-                  <div class="mb-3">
-                    <select class="form-select form-select-lg border-primary" name="dersler" multiple size="5" style="min-height: 150px;">
-                      {% for ders in tum_dersler %}
-                      <option value="{{ ders.ders_id }}">{{ ders.ders_adi }}</option>
-                      {% endfor %}
-                    </select>
-                  </div>
-                  <button type="submit" class="btn btn-primary">Dersleri Kaydet</button>
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="form-group mb-3">
+                                <div class="card">
+                                    <div class="card-body p-0">
+                                        <div class="list-group list-group-flush" style="max-height: 300px; overflow-y: auto;">
+                                            {% for ders in tum_dersler %}
+                                            <label class="list-group-item list-group-item-action">
+                                                <div class="d-flex align-items-center">
+                                                    <input type="checkbox" name="dersler" value="{{ ders.ders_id }}" class="form-check-input me-3">
+                                                    <div>
+                                                        <h6 class="mb-0">{{ ders.ders_adi }}</h6>
+                                                        <small class="text-muted d-block">
+                                                            {% if ders.hoca_adi and ders.hoca_soyisim %}
+                                                                <i class="bi bi-person-workspace text-success"></i> {{ ders.hoca_adi }} {{ ders.hoca_soyisim }}
+                                                            {% else %}
+                                                                <i class="bi bi-person-x text-warning"></i> Henüz hoca atanmamış
+                                                            {% endif %}
+                                                        </small>
+                                                        <small class="text-muted d-block mt-1">
+                                                            <i class="bi bi-people text-info"></i> Kontenjan: {{ ders.ogrenci_sayisi|default(0) }}/20
+                                                        </small>
+                                                    </div>
+                                                </div>
+                                            </label>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title mb-3">
+                                        <i class="bi bi-info-circle text-primary me-2"></i>Ders Seçim Kuralları
+                                    </h6>
+                                    <ul class="list-unstyled small mb-0">
+                                        <li class="mb-2">
+                                            <i class="bi bi-check2-square text-success me-2"></i>En fazla 8 ders seçebilirsiniz
+                                        </li>
+                                        <li class="mb-2">
+                                            <i class="bi bi-people text-info me-2"></i>Her dersin kontenjanı 20 kişidir
+                                        </li>
+                                        <li class="mb-2">
+                                            <i class="bi bi-calendar-event text-warning me-2"></i>Ders geri alma süresi 14 gündür
+                                        </li>
+                                        <li class="mb-2">
+                                            <i class="bi bi-exclamation-triangle text-danger me-2"></i>Süre dolunca ders bırakılamaz
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100 mt-3">
+                                <i class="bi bi-plus-lg me-2"></i>Seçili Dersleri Kaydet
+                            </button>
+                        </div>
+                    </div>
                 </form>
-              </div>
             </div>
-            <ul class="list-group list-group-flush">
-                {% for ders in dersler %}
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    {{ ders.ders_adi }}
-                    <form method="POST" action="{{ url_for('ogrenci_ders_geri_al') }}">
-                        <input type="hidden" name="ders_id" value="{{ ders.ders_id }}">
-                        <button type="submit" class="btn btn-danger btn-sm">Geri Al</button>
-                    </form>
-                </li>
+        </div>
+
+        <!-- Alınan Dersler Listesi -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-journal-text text-primary me-2"></i>Aldığım Dersler
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if dersler %}
+                <div class="row">
+                    {% for ders in dersler %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h5 class="card-title mb-2">
+                                            <i class="bi bi-book text-primary me-2"></i>{{ ders.ders_adi }}
+                                        </h5>
+                                        <p class="card-text text-muted small mb-0">
+                                            {% if ders.hoca_adi and ders.hoca_soyisim %}
+                                                <i class="bi bi-person-workspace text-success me-2"></i>
+                                                {{ ders.hoca_adi }} {{ ders.hoca_soyisim }}
+                                            {% else %}
+                                                <i class="bi bi-person-x text-warning me-2"></i>
+                                                Henüz hoca atanmamış
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                    <div class="ms-3">
+                                        <form method="POST" action="{{ url_for('ogrenci_ders_geri_al') }}" class="d-inline">
+                                            <input type="hidden" name="ders_id" value="{{ ders.ders_id }}">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" 
+                                                onclick="return confirm('{{ ders.ders_adi }} dersini geri almak istediğinize emin misiniz?')">
+                                                <i class="bi bi-trash me-1"></i>Dersi Bırak
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
                 {% else %}
-                <li class="list-group-item">Ders bulunamadı</li>
-                {% endfor %}
-            </ul>
+                <div class="text-center py-5">
+                    <i class="bi bi-journal-x text-muted fs-1 mb-3"></i>
+                    <p class="lead text-muted">Henüz ders seçilmemiş</p>
+                    <small class="text-muted d-block">Yukarıdaki formdan ders seçimi yapabilirsiniz</small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="text-center mt-4">
+            <a href="/" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-2"></i>Ana Sayfaya Dön
+            </a>
         </div>
     </div>
-</div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

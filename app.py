@@ -126,17 +126,13 @@ def ogrenci_ders_geri_al():
         flash('Ders seçimi yapılmadı', 'error')
         return redirect(url_for('ogrenci_detay', ogr_id=ogr_id))
     
-    # Dersi kontrol et
-    ders = db.ders_getir(ders_id)
-    if not ders:
-        flash('Ders bulunamadı', 'error')
-        return redirect(url_for('ogrenci_detay', ogr_id=ogr_id))
-    
     result = db.ders_geri_al(ogr_id, ders_id)
     if result['status']:
-        flash(f"{ders['ders_adi']} dersi başarıyla geri alındı", 'success')
+        flash(result['message'], 'success')
+        if result['kalan_ders_sayisi'] <= 3:
+            flash(f'Dikkat: Şu anda sadece {result["kalan_ders_sayisi"]} dersiniz kaldı!', 'warning')
     else:
-        flash(f"{ders['ders_adi']}: {result['message']}", 'error')
+        flash(result['message'], 'error')
     
     return redirect(url_for('ogrenci_detay', ogr_id=ogr_id))
 

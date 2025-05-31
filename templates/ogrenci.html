@@ -90,10 +90,7 @@
                                             <i class="bi bi-people text-info me-2"></i>Her dersin kontenjanı 20 kişidir
                                         </li>
                                         <li class="mb-2">
-                                            <i class="bi bi-calendar-event text-warning me-2"></i>Ders geri alma süresi 14 gündür
-                                        </li>
-                                        <li class="mb-2">
-                                            <i class="bi bi-exclamation-triangle text-danger me-2"></i>Süre dolunca ders bırakılamaz
+                                            <i class="bi bi-arrow-counterclockwise text-warning me-2"></i>Dersleri istediğiniz zaman bırakabilirsiniz
                                         </li>
                                     </ul>
                                 </div>
@@ -139,9 +136,12 @@
                                     <div class="ms-3">
                                         <form method="POST" action="{{ url_for('ogrenci_ders_geri_al') }}" class="d-inline">
                                             <input type="hidden" name="ders_id" value="{{ ders.ders_id }}">
-                                            <button type="submit" class="btn btn-sm btn-outline-danger" 
-                                                onclick="return confirm('{{ ders.ders_adi }} dersini geri almak istediğinize emin misiniz?')">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger position-relative" 
+                                                onclick="return confirm('{{ ders.ders_adi }} dersini bırakmak istediğinize emin misiniz?\nBu işlem geri alınamaz!')">
                                                 <i class="bi bi-trash me-1"></i>Dersi Bırak
+                                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                                    <i class="bi bi-exclamation-triangle-fill"></i>
+                                                </span>
                                             </button>
                                         </form>
                                     </div>

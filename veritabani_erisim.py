@@ -236,12 +236,14 @@ class VeritabaniErisim:
         try:
             transaction = self.connection.begin()
             
-            # Ders kaydının tarihini kontrol et
+            # Ders ve öğrenci bilgilerini kontrol et
             kayit_kontrol = self.connection.execute(
                 text("""
-                SELECT DATEDIFF(NOW(), kayit_tarihi) as gun_farki 
-                FROM ogrenciler_ders 
-                WHERE ogr_id=:o AND ders_id=:d
+                SELECT od.*, d.ders_adi, o.isim as ogr_adi, o.ogr_soyisim
+                FROM ogrenciler_ders od
+                JOIN dersler d ON od.ders_id = d.ders_id
+                JOIN ogrenciler o ON od.ogr_id = o.ogr_id
+                WHERE od.ogr_id=:o AND od.ders_id=:d
                 """),
                 {"o": ogr_id, "d": ders_id}
             ).mappings().first()
@@ -249,10 +251,16 @@ class VeritabaniErisim:
             if not kayit_kontrol:
                 return {'status': False, 'message': 'Ders kaydı bulunamadı'}
             
-            # 14 günlük süre kontrolü
-            if kayit_kontrol['gun_farki'] > 14:
-                return {'status': False, 'message': 'Ders geri alma süresi (14 gün) dolmuştur'}
+            # Öğrencinin toplam ders sayısını kontrol et
+            ders_sayisi = self.connection.execute(
+                text("SELECT COUNT(*) FROM ogrenciler_ders WHERE ogr_id=:o"),
+                {"o": ogr_id}
+            ).scalar()
             
+            if ders_sayisi <= 1:
+                return {'status': False, 'message': 'En az bir ders almak zorundasınız'}
+            
+            # Dersi bırak
             result = self.connection.execute(
                 text("DELETE FROM ogrenciler_ders WHERE ogr_id=:o AND ders_id=:d"),
                 {"o": ogr_id, "d": ders_id}
@@ -262,7 +270,12 @@ class VeritabaniErisim:
                 return {'status': False, 'message': 'Ders kaydı silinemedi'}
             
             transaction.commit()
-            return {'status': True, 'message': 'Ders başarıyla geri alındı'}
+            return {
+                'status': True,
+                'message': f'{kayit_kontrol["ders_adi"]} dersi başarıyla bırakıldı',
+                'ders_adi': kayit_kontrol['ders_adi'],
+                'kalan_ders_sayisi': ders_sayisi - 1
+            }
         except SQLAlchemyError as err:
             transaction.rollback()
             print(f"Ders geri alma hatası: {err}")

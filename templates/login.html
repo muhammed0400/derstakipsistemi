@@ -1,24 +1,137 @@
 <!DOCTYPE html>
-<html>
+<html lang="tr">
 <head>
-    <title>Giriş Sayfası</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ders Takip Sistemi - Giriş</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <style>
+        .hero-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="%23ffffff" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>') repeat;
+            opacity: 0.3;
+        }
+        .login-container {
+            position: relative;
+            z-index: 2;
+        }
+        .main-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+        .main-card:hover {
+            transform: translateY(-5px);
+        }
+        .login-btn {
+            padding: 15px 30px;
+            border-radius: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .login-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        .login-btn:hover::before {
+            left: 100%;
+        }
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        .title-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .floating-icon {
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+    </style>
 </head>
-<body class="login-body">
-    <div class="container">
-        <div class="row justify-content-center mt-5">
-            <div class="col-md-6 col-lg-4 text-center">
-                <div class="card login-card">
-                    <div class="card-body">
-                        <h3 class="text-center mb-4">Sisteme Giriş</h3>
-                        <a href="/admin_giris" class="btn btn-dark w-100 mb-3">Admin Girişi</a>
-<a href="/hoca_giris" class="btn btn-primary w-100 mb-3">Hoca Girişi</a>
-                        <a href="/ogrenci_giris" class="btn btn-secondary w-100">Öğrenci Girişi</a>
+<body>
+    <div class="hero-section">
+        <div class="container login-container">
+            <div class="row justify-content-center">
+                <div class="col-lg-5 col-md-7 col-sm-9">
+                    <div class="main-card">
+                        <div class="card-body p-5">
+                            <div class="text-center mb-5">
+                                <div class="floating-icon mb-3">
+                                    <i class="bi bi-mortarboard-fill" style="font-size: 4rem; color: #667eea;"></i>
+                                </div>
+                                <h1 class="title-gradient fw-bold mb-2">Ders Takip Sistemi</h1>
+                                <p class="text-muted">Eğitim yönetiminde yeni nesil çözüm</p>
+                            </div>
+                            
+                            <div class="d-grid gap-3">
+                                <a href="/admin_giris" class="btn btn-dark login-btn">
+                                    <i class="bi bi-shield-lock-fill me-3"></i>
+                                    <span>Admin Girişi</span>
+                                    <i class="bi bi-arrow-right ms-3"></i>
+                                </a>
+                                
+                                <a href="/hoca_giris" class="btn btn-primary login-btn">
+                                    <i class="bi bi-person-workspace me-3"></i>
+                                    <span>Öğretim Üyesi Girişi</span>
+                                    <i class="bi bi-arrow-right ms-3"></i>
+                                </a>
+                                
+                                <a href="/ogrenci_giris" class="btn btn-success login-btn">
+                                    <i class="bi bi-person-graduation me-3"></i>
+                                    <span>Öğrenci Girişi</span>
+                                    <i class="bi bi-arrow-right ms-3"></i>
+                                </a>
+                            </div>
+                            
+                            <div class="text-center mt-4">
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    Giriş yapmak için kullanıcı tipinizi seçin
+                                </small>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

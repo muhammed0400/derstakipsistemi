@@ -54,10 +54,19 @@ def hoca_detay(hoca_id):
         return redirect(url_for('login'))
     hoca = db.hoca_getir(hoca_id)
     hoca_dersleri = db.hocanin_verdigi_dersler(hoca_id)
+    
+    # Hocanın toplam öğrenci sayısını hesapla
+    total_students = 0
+    for ders in hoca_dersleri:
+        ogrenci_sayisi = db.dersi_alan_ogrenci_sayisi(ders['ders_id'])
+        ders['ogrenci_sayisi'] = ogrenci_sayisi
+        total_students += ogrenci_sayisi
+    
     return render_template('hoca.html', 
                          dersler=hoca_dersleri,
                          hoca_id=hoca_id,
-                         hoca=hoca)
+                         hoca=hoca,
+                         total_students=total_students)
 
 @app.route('/ogrenci/<int:ogr_id>')
 def ogrenci_detay(ogr_id):
@@ -77,7 +86,14 @@ def ogrenci_ders_sec():
     if 'kullanici_id' not in session and not session.get('admin_logged_in'):
         return redirect(url_for('login'))
     
-    ogr_id = session['kullanici_id']
+    ogr_id = request.form.get('ogr_id')  # Form'dan öğrenci ID'sini al
+    if not ogr_id and 'kullanici_id' in session:
+        ogr_id = session['kullanici_id']  # Eğer form'dan gelmezse session'dan al
+    
+    if not ogr_id:
+        flash('Öğrenci ID bulunamadı', 'error')
+        return redirect(url_for('dashboard'))
+        
     secilen_dersler = request.form.getlist('dersler')
     
     if not secilen_dersler:
@@ -119,7 +135,14 @@ def ogrenci_ders_geri_al():
     if 'kullanici_id' not in session and not session.get('admin_logged_in'):
         return redirect(url_for('login'))
     
-    ogr_id = session['kullanici_id']
+    ogr_id = request.form.get('ogr_id')  # Form'dan öğrenci ID'sini al
+    if not ogr_id and 'kullanici_id' in session:
+        ogr_id = session['kullanici_id']  # Eğer form'dan gelmezse session'dan al
+    
+    if not ogr_id:
+        flash('Öğrenci ID bulunamadı', 'error')
+        return redirect(url_for('dashboard'))
+        
     ders_id = request.form.get('ders_id')
     
     if not ders_id:

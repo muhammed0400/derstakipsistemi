@@ -1,107 +1,256 @@
 <!DOCTYPE html>
-<html>
+<html lang="tr">
 <head>
-    <title>Hoca Detay</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hoca Detayları - {{ hoca.isim }} {{ hoca.soyisim }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='styles.css') }}" rel="stylesheet">
+    <style>
+        .grain-effect {
+            position: relative;
+            overflow: hidden;
+        }
+        .grain-effect::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0);
+            background-size: 20px 20px;
+            pointer-events: none;
+            z-index: 1;
+        }
+        .teacher-avatar {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 3rem;
+            margin: 0 auto 1rem;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+        .course-card {
+            transition: all 0.3s ease;
+            border: none;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+        .course-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        }
+        .student-item {
+            padding: 15px;
+            margin-bottom: 10px;
+            background: white;
+            border-radius: 15px;
+            border: 1px solid rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+        .student-item:hover {
+            background: linear-gradient(135deg, #f8f9ff, #fff5f5);
+            transform: translateX(5px);
+        }
+    </style>
 </head>
-<body class="bg-light">
-    <div class="container mt-4">
-        <div class="card mb-4 shadow-sm">
-            <div class="card-body bg-primary bg-gradient text-white p-4">
-                <div class="d-flex align-items-center">
-                    <i class="bi bi-person-circle fs-1 me-3"></i>
-                    <div>
-                        <h1 class="display-6 mb-0">Öğretim Üyesi {{ hoca.isim }} {{ hoca.soyisim }}</h1>
+<body class="grain-effect" style="min-height: 100vh; overflow-y: auto;">
+    <div class="container py-5">
+        <!-- Hero Section -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="modern-card text-center p-5">
+                    <div class="teacher-avatar">
+                        <i class="bi bi-person-workspace"></i>
+                    </div>
+                    <h1 class="gradient-text mb-2">{{ hoca.isim }} {{ hoca.soyisim }}</h1>
+                    <p class="text-muted fs-5 mb-3">
+                        <i class="bi bi-envelope me-2"></i>{{ hoca.email }}
+                    </p>
+                    <div class="d-flex justify-content-center gap-4 mt-4">
+                        <div class="text-center">
+                            <div class="h3 text-primary mb-0">{{ dersler|length }}</div>
+                            <small class="text-muted">Verdiği Ders</small>
+                        </div>
+                        <div class="text-center">
+                            <div class="h3 text-success mb-0">{{ total_students if total_students else 0 }}</div>
+                            <small class="text-muted">Toplam Öğrenci</small>
+                        </div>
+                        <div class="text-center">
+                            <div class="h3 text-info mb-0">{{ (total_students / (dersler|length * 20) * 100)|round|int if dersler|length > 0 else 0 }}%</div>
+                            <small class="text-muted">Doluluk Oranı</small>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-        <!-- Ders Ekleme Formu -->
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-white">
-                <h5 class="card-title mb-0">
-                    <i class="bi bi-plus-circle-fill text-primary me-2"></i>Yeni Ders Ekle
-                </h5>
-            </div>
-            <div class="card-body">
-                <form method="POST" action="{{ url_for('hoca_detay', hoca_id=hoca_id) }}">
-                    <div class="row g-3">
-                        <div class="col-md-9">
-                            <div class="form-floating">
-                                <input type="text" name="ders_adi" class="form-control" id="dersAdi" placeholder="Ders Adı" required>
-                                <label for="dersAdi">Ders Adı</label>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <button type="submit" class="btn btn-primary w-100 h-100">
-                                <i class="bi bi-plus-lg me-2"></i>Ekle
-                            </button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- Flash Mesajları -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
+        
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages() %}
             {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                <div class="row mb-4">
+                    <div class="col-12">
+                        {% for message in messages %}
+                            <div class="alert alert-info alert-dismissible fade show modern-card" role="alert" style="border-radius: 15px;">
+                                <i class="bi bi-info-circle me-2"></i>{{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
                     </div>
-                {% endfor %}
+                </div>
             {% endif %}
         {% endwith %}
 
-        <!-- Ders Listesi -->
-        <div class="card shadow-sm">
-            <div class="card-header bg-white">
-                <h5 class="card-title mb-0">
-                    <i class="bi bi-journal-text text-primary me-2"></i>Verdiğim Dersler
-                </h5>
-            </div>
-            <div class="card-body">
-                {% if dersler %}
-                <div class="list-group list-group-flush">
-                    {% for ders in dersler %}
-                    <div class="list-group-item">
-                        <div class="d-flex justify-content-between align-items-center">
+        <div class="row g-4">
+            <!-- Add New Course Card -->
+            <div class="col-lg-4">
+                <div class="modern-card h-100">
+                    <div class="card-header bg-transparent border-0 p-4">
+                        <h5 class="card-title mb-0 d-flex align-items-center gap-3">
+                            <div style="width: 50px; height: 50px; background: linear-gradient(135deg, #4ecdc4, #44a08d); border-radius: 15px; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem;">
+                                <i class="bi bi-plus-circle"></i>
+                            </div>
                             <div>
-                                <h5 class="mb-1">{{ ders.ders_adi }}</h5>
+                                <div>Yeni Ders Ekle</div>
+                                <small class="text-muted">Ders programınıza ekleyin</small>
                             </div>
-                            <div class="d-flex gap-2">
-                                <a href="{{ url_for('ders_ogrencileri', hoca_id=hoca_id, ders_id=ders.ders_id) }}" 
-                                   class="btn btn-outline-primary">
-                                    <i class="bi bi-people-fill me-2"></i>Öğrencileri Görüntüle
-                                </a>
-                                <form method="POST" action="{{ url_for('ders_sil', hoca_id=hoca_id, ders_id=ders.ders_id) }}" class="d-inline">
-                                    <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Bu dersi silmek istediğinize emin misiniz?')">
-                                        <i class="bi bi-trash me-2"></i>Dersi Sil
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
+                        </h5>
                     </div>
-                    {% endfor %}
+                    <div class="card-body p-4">
+                        <form method="POST" action="{{ url_for('hoca_detay', hoca_id=hoca_id) }}">
+                            <div class="mb-3">
+                                <label for="ders_adi" class="form-label fw-semibold">
+                                    <i class="bi bi-book me-2"></i>Ders Adı:
+                                </label>
+                                <input type="text" name="ders_adi" class="form-control form-control-modern" 
+                                       id="ders_adi" placeholder="Örn: Matematik, Fizik, Kimya..." required>
+                            </div>
+                            <button type="submit" class="btn btn-primary-modern btn-modern w-100">
+                                <i class="bi bi-plus-lg me-2"></i>Dersi Ekle
+                            </button>
+                        </form>
+                    </div>
                 </div>
-                {% else %}
-                <div class="text-center py-4">
-                    <i class="bi bi-journal-x text-muted fs-1"></i>
-                    <p class="lead text-muted mt-2">Henüz ders eklenmemiş</p>
+            </div>
+            
+            <!-- Courses List -->
+            <div class="col-lg-8">
+                <div class="modern-card h-100">
+                    <div class="card-header bg-transparent border-0 p-4">
+                        <h5 class="card-title mb-0 d-flex align-items-center gap-3">
+                            <div style="width: 50px; height: 50px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 15px; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem;">
+                                <i class="bi bi-journal-text"></i>
+                            </div>
+                            <div>
+                                <div>Verdiğim Dersler</div>
+                                <small class="text-muted">Aktif ders programınız</small>
+                            </div>
+                            {% if dersler %}
+                                <span class="capacity-badge ms-auto">{{ dersler|length }} Ders</span>
+                            {% endif %}
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        {% if dersler %}
+                            <div class="row g-3">
+                                {% for ders in dersler %}
+                                    <div class="col-md-6">
+                                        <div class="course-card modern-card h-100">
+                                            <div class="card-body p-4">
+                                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                                    <div class="flex-grow-1">
+                                                        <h6 class="fw-bold mb-2">
+                                                            <i class="bi bi-book text-primary me-2"></i>{{ ders.ders_adi }}
+                                                        </h6>
+                                                        <div class="d-flex align-items-center gap-2 mb-2">
+                                                            <i class="bi bi-people text-info"></i>
+                                                            <span class="small text-muted">{{ ders.ogrenci_sayisi }}/20 Öğrenci</span>
+                                                            <span class="capacity-badge">{{ (ders.ogrenci_sayisi / 20 * 100)|round|int }}%</span>
+                                                        </div>
+                                                        <div class="progress" style="height: 8px; border-radius: 10px;">
+                                                            <div class="progress-bar" role="progressbar" 
+                                                                 style="width: {{ (ders.ogrenci_sayisi / 20 * 100)|round }}%; background: linear-gradient(135deg, #4ecdc4, #44a08d);" 
+                                                                 aria-valuenow="{{ ders.ogrenci_sayisi }}" 
+                                                                 aria-valuemin="0" aria-valuemax="20">
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="d-flex gap-2">
+                                                    <a href="{{ url_for('ders_ogrencileri', hoca_id=hoca_id, ders_id=ders.ders_id) }}" 
+                                                       class="btn btn-primary-modern btn-sm flex-grow-1">
+                                                        <i class="bi bi-people me-1"></i>Öğrenciler
+                                                    </a>
+                                                    <form method="POST" action="{{ url_for('ders_sil', hoca_id=hoca_id, ders_id=ders.ders_id) }}" class="d-inline">
+                                                        <button type="submit" class="btn btn-danger-modern btn-sm" 
+                                                                onclick="return confirm('{{ ders.ders_adi }} dersini silmek istediğinize emin misiniz? Bu işlem geri alınamaz!')">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="text-center py-5">
+                                <div style="font-size: 4rem; opacity: 0.3; margin-bottom: 1rem;">📚</div>
+                                <h5 class="text-muted">Henüz ders eklenmemiş</h5>
+                                <p class="text-muted">Sol taraftaki formdan yeni ders ekleyebilirsiniz.</p>
+                                <div class="mt-3">
+                                    <span class="capacity-badge">0 Ders</span>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
                 </div>
-                {% endif %}
             </div>
         </div>
-
-        <div class="text-center mt-4">
-            <a href="/" class="btn btn-outline-secondary">
+        
+        <div class="text-center mt-5">
+            <a href="/" class="btn btn-secondary-modern btn-modern">
                 <i class="bi bi-arrow-left me-2"></i>Ana Sayfaya Dön
             </a>
         </div>
     </div>
+    
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Add smooth animations
+        document.addEventListener('DOMContentLoaded', function() {
+            // Animate cards on load
+            const cards = document.querySelectorAll('.modern-card');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(30px)';
+                setTimeout(() => {
+                    card.style.transition = 'all 0.6s ease';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 200);
+            });
+            
+            // Animate course cards
+            const courseCards = document.querySelectorAll('.course-card');
+            courseCards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'scale(0.9)';
+                setTimeout(() => {
+                    card.style.transition = 'all 0.4s ease';
+                    card.style.opacity = '1';
+                    card.style.transform = 'scale(1)';
+                }, 1000 + (index * 100));
+            });
+        });
+    </script>
 </body>
 </html>

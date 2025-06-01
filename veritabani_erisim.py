@@ -73,6 +73,15 @@ class VeritabaniErisim:
         if self.engine:
             self.engine.dispose()
             print("Veritabanı bağlantısı kapatıldı.")
+            
+    def dersi_alan_ogrenci_sayisi(self, ders_id):
+        try:
+            sorgu = text("SELECT COUNT(*) FROM ogrenciler_ders WHERE ders_id = :ders_id")
+            result = self.connection.execute(sorgu, {"ders_id": ders_id})
+            return result.scalar()
+        except SQLAlchemyError as err:
+            print(f"Sorgu hatası: {err}")
+            return 0
     
     def tum_hocalari_getir(self):
         try:

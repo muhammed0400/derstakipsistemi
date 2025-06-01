@@ -1,34 +1,255 @@
 <!DOCTYPE html>
-<html>
+<html lang="tr">
 <head>
-    <title>Hoca Girişi</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Öğretim Üyesi Girişi - Ders Takip Sistemi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <style>
+        .teacher-hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            position: relative;
+        }
+        .teacher-hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="books" width="20" height="20" patternUnits="userSpaceOnUse"><rect width="20" height="20" fill="none"/><path d="M2 2h16v16H2z" fill="none" stroke="%23ffffff" stroke-width="0.5" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23books)"/></svg>') repeat;
+        }
+        .teacher-card {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+            z-index: 2;
+            overflow: hidden;
+        }
+        .teacher-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 20px 20px 0 0;
+            padding: 2rem;
+            text-align: center;
+            position: relative;
+        }
+        .teacher-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 20px;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20"><path d="M0,20 Q25,0 50,10 T100,5 L100,20 Z" fill="%23ffffff"/></svg>') no-repeat center bottom;
+            background-size: cover;
+        }
+        .form-floating {
+            margin-bottom: 1.5rem;
+        }
+        .form-control {
+            border-radius: 12px;
+            border: 2px solid #e9ecef;
+            padding: 1rem;
+            transition: all 0.3s ease;
+        }
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.25);
+            transform: translateY(-2px);
+        }
+        .teacher-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 12px;
+            padding: 1rem 2rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .teacher-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+        .teacher-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        .teacher-btn:hover::before {
+            left: 100%;
+        }
+        .back-btn {
+            color: #6c757d;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .back-btn:hover {
+            color: #667eea;
+            transform: translateX(-5px);
+        }
+        .academic-badge {
+            position: absolute;
+            top: -15px;
+            right: -15px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            animation: rotate 10s linear infinite;
+        }
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .floating-elements {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            pointer-events: none;
+        }
+        .floating-elements::before,
+        .floating-elements::after {
+            content: '📚';
+            position: absolute;
+            font-size: 2rem;
+            opacity: 0.1;
+            animation: float 6s ease-in-out infinite;
+        }
+        .floating-elements::before {
+            top: 20%;
+            left: 10%;
+            animation-delay: -2s;
+        }
+        .floating-elements::after {
+            top: 60%;
+            right: 15%;
+            animation-delay: -4s;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+    </style>
 </head>
-<body class="login-body">
-    <div class="container">
-        <div class="row justify-content-center mt-5">
-            <div class="col-md-6 col-lg-4 text-center">
-                <div class="card login-card">
-                    <div class="card-body">
-                        <h3 class="text-center mb-4">Hoca Girişi</h3>
-                        {% if hata %}
-                            <div class="alert alert-danger">{{ hata }}</div>
-                        {% endif %}
-                        <form method="POST" action="/hoca_giris">
-                            <div class="mb-3">
-                                <input type="email" class="form-control" name="email" placeholder="Email" required>
+<body>
+    <div class="teacher-hero">
+        <div class="floating-elements"></div>
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-5 col-md-7">
+                    <div class="teacher-card">
+                        <div class="academic-badge">
+                            <i class="bi bi-mortarboard-fill"></i>
+                        </div>
+                        
+                        <div class="teacher-header">
+                            <i class="bi bi-person-workspace" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                            <h2 class="fw-bold mb-0">Öğretim Üyesi</h2>
+                            <p class="mb-0 opacity-75">Akademik Portal Girişi</p>
+                        </div>
+                        
+                        <div class="card-body p-4">
+                            {% if hata %}
+                                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                    {{ hata }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endif %}
+                            
+                            <form method="POST" action="/hoca_giris" class="needs-validation" novalidate>
+                                <div class="form-floating">
+                                    <input type="email" class="form-control" id="email" name="email" placeholder="E-posta Adresi" required>
+                                    <label for="email">
+                                        <i class="bi bi-envelope-fill me-2"></i>E-posta Adresi
+                                    </label>
+                                    <div class="invalid-feedback">
+                                        Lütfen geçerli bir e-posta adresi girin.
+                                    </div>
+                                </div>
+                                
+                                <div class="form-floating">
+                                    <input type="password" class="form-control" id="sifre" name="sifre" placeholder="Şifre" required>
+                                    <label for="sifre">
+                                        <i class="bi bi-lock-fill me-2"></i>Şifre
+                                    </label>
+                                    <div class="invalid-feedback">
+                                        Lütfen şifrenizi girin.
+                                    </div>
+                                </div>
+                                
+                                <div class="d-grid mb-3">
+                                    <button type="submit" class="btn teacher-btn">
+                                        <i class="bi bi-mortarboard me-2"></i>
+                                        Akademik Giriş
+                                    </button>
+                                </div>
+                            </form>
+                            
+                            <div class="text-center">
+                                <a href="/" class="back-btn">
+                                    <i class="bi bi-arrow-left"></i>
+                                    Ana Sayfaya Dön
+                                </a>
                             </div>
-                            <div class="mb-3">
-                                <input type="password" class="form-control" name="sifre" placeholder="Şifre" required>
+                            
+                            <div class="text-center mt-4">
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    Kurumsal e-posta adresinizi kullanın
+                                </small>
                             </div>
-                            <button type="submit" class="btn btn-primary w-100">Giriş Yap</button>
-                        </form>
-                        <a href="/" class="btn btn-link mt-3 w-100">Ana Sayfa</a>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Form validation
+        (function() {
+            'use strict';
+            window.addEventListener('load', function() {
+                var forms = document.getElementsByClassName('needs-validation');
+                var validation = Array.prototype.filter.call(forms, function(form) {
+                    form.addEventListener('submit', function(event) {
+                        if (form.checkValidity() === false) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                        }
+                        form.classList.add('was-validated');
+                    }, false);
+                });
+            }, false);
+        })();
+    </script>
 </body>
 </html>
